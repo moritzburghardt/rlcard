@@ -155,7 +155,15 @@ class NolimitholdemGame(Game):
         # If a round is over, we deal more public cards
         if self.round.is_over():
             # Game pointer goes to the first player not in bypass after the dealer, if there is one
-            self.game_pointer = (self.dealer_id + 1) % self.num_players
+            # In heads-up (2 players), post-flop the small blind acts last (big blind acts first)
+            # In multi-player games, small blind acts first post-flop
+            if self.num_players == 2:
+                # Heads-up: big blind acts first in all post-flop rounds
+                self.game_pointer = (self.dealer_id + 2) % self.num_players
+            else:
+                # Multi-player: small blind acts first post-flop
+                self.game_pointer = (self.dealer_id + 1) % self.num_players
+            
             if sum(players_in_bypass) < self.num_players:
                 while players_in_bypass[self.game_pointer]:
                     self.game_pointer = (self.game_pointer + 1) % self.num_players
