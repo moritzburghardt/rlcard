@@ -204,6 +204,66 @@ class TestNolimitholdemMethods(unittest.TestCase):
         game.step(Action.CHECK_CALL)
         self.assertTrue(game.is_over())
 
+    def test_heads_up_acting_order(self):
+        """Test that heads-up poker has correct acting order post-flop."""
+        game = Game(num_players=2)
+        game.dealer_id = 0
+        
+        # Initialize the game
+        state, first_player = game.init_game()
+        
+        # Pre-flop: Small blind (dealer in heads-up) should act first
+        expected_preflop_first = (game.dealer_id + 1) % 2  # Small blind
+        self.assertEqual(first_player, expected_preflop_first)
+        
+        # Play through pre-flop
+        game.step(Action.CHECK_CALL)  # Small blind calls
+        game.step(Action.CHECK_CALL)  # Big blind checks
+        
+        # Should now be at flop
+        self.assertEqual(game.stage, Stage.FLOP)
+        
+        # Post-flop: Big blind should act first in heads-up
+        current_player = game.game_pointer
+        expected_postflop_first = (game.dealer_id + 2) % 2  # Big blind
+        self.assertEqual(current_player, expected_postflop_first)
+        
+        # Continue to next round to verify it persists
+        game.step(Action.CHECK_CALL)  # Big blind checks
+        game.step(Action.CHECK_CALL)  # Small blind checks
+        
+        # Should now be at turn
+        self.assertEqual(game.stage, Stage.TURN)
+        
+        # Turn: Big blind should still act first
+        current_player = game.game_pointer
+        self.assertEqual(current_player, expected_postflop_first)
+
+    def test_multi_player_acting_order_unchanged(self):
+        """Test that multi-player poker acting order is unchanged."""
+        game = Game(num_players=3)
+        game.dealer_id = 0
+        
+        # Initialize the game
+        state, first_player = game.init_game()
+        
+        # Pre-flop: Player after big blind should act first
+        expected_preflop_first = (game.dealer_id + 3) % 3  # Player after big blind
+        self.assertEqual(first_player, expected_preflop_first)
+        
+        # Play through pre-flop
+        game.step(Action.CHECK_CALL)  # Player 0 calls
+        game.step(Action.CHECK_CALL)  # Small blind calls
+        game.step(Action.CHECK_CALL)  # Big blind checks
+        
+        # Should now be at flop
+        self.assertEqual(game.stage, Stage.FLOP)
+        
+        # Post-flop: Small blind should act first (if still in hand)
+        current_player = game.game_pointer
+        expected_postflop_first = (game.dealer_id + 1) % 3  # Small blind
+        self.assertEqual(current_player, expected_postflop_first)
+
 
 if __name__ == '__main__':
     unittest.main()
